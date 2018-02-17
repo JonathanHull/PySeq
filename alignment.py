@@ -34,12 +34,9 @@ class LocalAlignment:
 
         matrix = np.zeros([len(self.seq1), len(self.seq2)], dtype=bool)
 
-        seq1L = list(self.seq1)
-        seq2L = list(self.seq2)
-
-        for r in range(len(seq1L)):
-            for c in range(len(seq2L)):
-                if seq1L[r] == seq2L[c]:
+        for r in range(len(self.seq1L)):
+            for c in range(len(self.seq2L)):
+                if self.seq1L[r] == self.seq2L[c]:
                     matrix[r][c] = True
 
         return matrix
@@ -49,6 +46,7 @@ class LocalAlignment:
         """Generates the score matrix from the base matrix"""
 
         matrix = np.zeros([len(self.seq1)+1, len(self.seq2)+1])
+
 
 
 
