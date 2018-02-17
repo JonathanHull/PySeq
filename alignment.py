@@ -25,8 +25,9 @@ class LocalAlignment:
 
         pathTup = self._pathMatrix(self.scoreMat)
 
-        self._seqAssembly(pathTup)
+        base = self._seqAssembly(pathTup)
 
+        self._seqStatistics(base)
 
 
 
@@ -118,25 +119,42 @@ class LocalAlignment:
         mList = []
 
         for i in range(len(cList[0])):
-
             if seqList[i][0] == seqList[i][1]:
-
                 mList.append("|")
             else:
                 mList.append(" ")
 
-        print(mList)
-
         cList[1] = mList
 
-        for i in cList:
-            print("".join(i))
+        return cList
+
+
+    def _seqStatistics(self, cList):
+        """Generate basic statistics on sequence alignment"""
+
+        n = SequenceStatistics(cList)
+
+        print(n.gc_ratio())
 
 
 
 
 
-            
+class SequenceStatistics:
+    def __init__(self, seqList):
+        self.seqList = seqList
+
+    def gc_ratio(self):
+        seq1 = (float(self.seqList[0].count("G")) +
+                self.seqList[0].count("C"))/len(self.seqList[0])
+
+        seq2 = (float(self.seqList[2].count("G")) +
+                self.seqList[2].count("C"))/len(self.seqList[2])
+
+        return seq1, seq2
+
+
+
 
 
 
