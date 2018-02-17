@@ -23,7 +23,11 @@ class LocalAlignment:
         self.boolMat = self.boolMatrixGen()
         self.scoreMat = self.scoreMatrix(self.boolMat)
 
-        self._pathMatrix(self.scoreMat)
+        pathTup = self._pathMatrix(self.scoreMat)
+
+        self._seqAssembly(pathTup)
+
+
 
 
     def boolMatrixGen(self):
@@ -106,8 +110,34 @@ class LocalAlignment:
 
         return outList
 
+
     def _seqAssembly(self, seqList):
         """Builds sequence alignment from path prediction."""
+
+        cList = [[x[0] for x in seqList], "", [x[1] for x in seqList]]
+        mList = []
+
+        for i in range(len(cList[0])):
+
+            if seqList[i][0] == seqList[i][1]:
+
+                mList.append("|")
+            else:
+                mList.append(" ")
+
+        print(mList)
+
+        cList[1] = mList
+
+        for i in cList:
+            print("".join(i))
+
+
+
+
+
+            
+
 
 
 x = LocalAlignment(seqA, seqB)
