@@ -103,13 +103,16 @@ class LocalAlignment:
         ## Uses the equation W = u(k-1) + V.
         ## where u = gap extention penalty, V = gap opening penalty.
 
+        ## Note: could use one list for kvc/kv and delete entries if they don't
+        ## stack.
+
         matrix = np.zeros([len(boolMat)+1, len(boolMat[0])+1])
 
-        kv = 1
+        kv = [] # List of gaps passed to next iteration.
+        kvc = [] # tuple list :: (column index, gap extention(k))
+        kvv = 1 # Vertical gap extention penalty value.
         kh = 1
 
-        print(len(matrix))
-
         for r in range(1, len(matrix)):
             for c in range(1, len(matrix[0])):
 
@@ -118,70 +121,44 @@ class LocalAlignment:
                 else:
                     diag = matrix[r-1][c-1] - self.seq_miss
 
-                if diag < 0:
-                    diag = 0
+                if c in [i[0] for i in kvc]:
+                    kvv = kvc[([i[0] for i in kvc].index(c))][1]
 
-                vertical = matrix[r-1][c] - (float(self.seq_gap)*(kv-1) +
-                        self.seq_opening)
+                vertical = max(0, matrix[r-1][c] - (float(self.seq_gap)*(kvv-1) +
+                        self.seq_opening))
 
-                horizontal = matrix[r][c-1] - (float(self.seq_gap)*(kh-1) +
-                        self.seq_opening)
+                horizontal = max(0, matrix[r][c-1] - (float(self.seq_gap)*(kh-1) +
+                        self.seq_opening))
 
-                matrix[r][c] = sorted([diag, vertical, horizontal, 0],
-                        reverse=True)[0]
+                matrix[r][c] = sorted([diag, vertical, horizontal, 0], reverse=True)
 
+                ## Checks gap continuation dynamically, through tuple list.
 
-                ## Prioritises horizontal over vertical.
-                ## Use rand temporarily, calculate all paths later on.
+                if (vertical or horizontal) >= diag and sum([vertical,
+                    horizontal, diag]) > 0:
+                    if vertical >= horizontal:
+                        if c in [i[0] for i in kvc]:
+                            kv.append((c, kvc[([i[0] for i in kvc].index(c))][1]+1))
+                        else:
+                            kv.append((c, 1))
 
-                if matrix[r][c] == diag:
-                    kv = 1
+                        if horizontal == vertical:
+                            kh += 1
+
+                    else:
+                        kh += 1
+
+                else:
                     kh = 1
-                elif matrix[r][c] == horizontal:
-                    kh += 1
-                else:
-                    kv += 1
+
+            kvc = kv
+            print(kvc)
+            kv = []
+
+        ## Note: Implement method for users to specify prioritising matches over
+        ## continuation of gap.
 
         return matrix
-
-
-    def AffineScoreMatrix1(self, boolMat):
-        """Generates scoring matrix utilising affine transformations."""
-
-        ## Tuple holder indicating number of chained deletions/misses (value,
-        ## chains).
-
-        matrix = np.zeros([len(boolMat)+1, len(boolMat[0])+1])
-
-        k = 1
-
-        for r in range(1, len(matrix)):
-            for c in range(1, len(matrix[0])):
-
-                if boolMat[r-1][c-1] == True:
-                    diag = matrix[r-1][c-1] + self.seq_match
-                else:
-                    diag = matrix[r-1][c-1] - self.seq_miss
-
-                print(matrix[r-1][c])
-
-                vertical = matrix[r-1][c] - (float(self.seq_gap)*(k-1) +
-                        self.seq_opening)
-
-                horizontal = matrix[r][c-1] - (float(self.seq_gap)*(k-1) +
-                        self.seq_opening)
-
-                matrix[r][c] = sorted([diag, vertical, horizontal, 0],
-                        reverse=True)[0]
-
-                if matrix[r][c] == diag:
-                    k = 1
-                else:
-                    k += 1
-
-        return matrix
-
-
 
 
     def _pathMatrix(self, matrix):
@@ -227,6 +204,7 @@ class LocalAlignment:
         ## Condition for when r/c becomes zero needed.
 
         return outList
+
 
     def _seqAssembly(self, seqList):
         """Builds sequence alignment from path prediction."""
