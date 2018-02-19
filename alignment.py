@@ -1,5 +1,7 @@
 #!/usr/bin/python2.7
 
+# Author: Jonathan Hull (jonathan.hull11@gmail.com)
+
 import sys
 import random
 import numpy as np
@@ -9,24 +11,48 @@ seqB = "AGTAACGTA"
 
 class LocalAlignment:
 
-    def __init__(self, seq1, seq2, seq_match=3, seq_miss=-3, seq_del=-2):
+    def __init__(self,
+                seq1, 
+                seq2,
+                score_method="affine",
+                seq_opening=5,
+                seq_gap=1,
+                #seq_gap=2,
+                seq_match=3, 
+                seq_miss=3):
 
         self.seq1 = seq1
         self.seq2 = seq2
+        self.score_method = score_method.lower()
         self.seq_match = seq_match
         self.seq_miss = seq_miss
-        self.seq_del = seq_del
+        self.seq_gap = seq_gap
+        self.seq_opening = seq_opening
+
+    def build(self):
+        pass
+
 
     def start(self):
         """Initialise local sequence alignment algorithms"""
 
         self.boolMat = self.boolMatrixGen()
-        self.scoreMat = self.scoreMatrix(self.boolMat)
+
+        if self.score_method == "affine":
+            self.scoreMat = self.AffineScoreMatrix(self.boolMat)
+        elif self.score_method == "linear":
+            self.scoreMat = self.scoreMatrix(self.boolMat)
+        else:
+            raise ComponentNameError('score_method argument must be either '
+                    '"affine, or "linear".')
+
+
+        print(self.scoreMat)
+        pass
+
 
         pathTup = self._pathMatrix(self.scoreMat)
-
         base = self._seqAssembly(pathTup)
-
         self._seqStatistics(base)
 
 
@@ -49,6 +75,7 @@ class LocalAlignment:
 
     def scoreMatrix(self, boolMat):
         """Generates the score matrix from the base matrix"""
+        ## Rename linear score matrix.
 
         matrix = np.zeros([len(boolMat)+1, len(boolMat[0])+1])
 
@@ -58,15 +85,103 @@ class LocalAlignment:
                 if boolMat[r-1][c-1] == True:
                     diag = matrix[r-1][c-1] + self.seq_match
                 else:
-                    diag = matrix[r-1][c-1] + self.seq_miss
+                    diag = matrix[r-1][c-1] - self.seq_miss
 
-                vertical = matrix[r-1][c] + self.seq_del
-                horizontal = matrix[r][c-1] + self.seq_del
+                vertical = matrix[r-1][c] - self.seq_gap
+                horizontal = matrix[r][c-1] - self.seq_gap
 
                 matrix[r][c] = sorted([diag, vertical, horizontal, 0],
                         reverse=True)[0]
 
         return matrix
+
+
+
+    def AffineScoreMatrix(self, boolMat):
+        """Generates scoring matrix utilising affine transformations."""
+
+        ## Uses the equation W = u(k-1) + V.
+        ## where u = gap extention penalty, V = gap opening penalty.
+
+        matrix = np.zeros([len(boolMat)+1, len(boolMat[0])+1])
+
+        kv = 1
+        kh = 1
+
+        print(len(matrix))
+
+        for r in range(1, len(matrix)):
+            for c in range(1, len(matrix[0])):
+
+                if boolMat[r-1][c-1] == True:
+                    diag = matrix[r-1][c-1] + self.seq_match
+                else:
+                    diag = matrix[r-1][c-1] - self.seq_miss
+
+                if diag < 0:
+                    diag = 0
+
+                vertical = matrix[r-1][c] - (float(self.seq_gap)*(kv-1) +
+                        self.seq_opening)
+
+                horizontal = matrix[r][c-1] - (float(self.seq_gap)*(kh-1) +
+                        self.seq_opening)
+
+                matrix[r][c] = sorted([diag, vertical, horizontal, 0],
+                        reverse=True)[0]
+
+
+                ## Prioritises horizontal over vertical.
+                ## Use rand temporarily, calculate all paths later on.
+
+                if matrix[r][c] == diag:
+                    kv = 1
+                    kh = 1
+                elif matrix[r][c] == horizontal:
+                    kh += 1
+                else:
+                    kv += 1
+
+        return matrix
+
+
+    def AffineScoreMatrix1(self, boolMat):
+        """Generates scoring matrix utilising affine transformations."""
+
+        ## Tuple holder indicating number of chained deletions/misses (value,
+        ## chains).
+
+        matrix = np.zeros([len(boolMat)+1, len(boolMat[0])+1])
+
+        k = 1
+
+        for r in range(1, len(matrix)):
+            for c in range(1, len(matrix[0])):
+
+                if boolMat[r-1][c-1] == True:
+                    diag = matrix[r-1][c-1] + self.seq_match
+                else:
+                    diag = matrix[r-1][c-1] - self.seq_miss
+
+                print(matrix[r-1][c])
+
+                vertical = matrix[r-1][c] - (float(self.seq_gap)*(k-1) +
+                        self.seq_opening)
+
+                horizontal = matrix[r][c-1] - (float(self.seq_gap)*(k-1) +
+                        self.seq_opening)
+
+                matrix[r][c] = sorted([diag, vertical, horizontal, 0],
+                        reverse=True)[0]
+
+                if matrix[r][c] == diag:
+                    k = 1
+                else:
+                    k += 1
+
+        return matrix
+
+
 
 
     def _pathMatrix(self, matrix):
@@ -109,8 +224,9 @@ class LocalAlignment:
 
             outList.append(outChar)
 
-        return outList
+        ## Condition for when r/c becomes zero needed.
 
+        return outList
 
     def _seqAssembly(self, seqList):
         """Builds sequence alignment from path prediction."""
