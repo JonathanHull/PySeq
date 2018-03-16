@@ -15,6 +15,7 @@ import threading
 #import multiprocessing as mp
 import Queue
 import numpy as np
+import copy
 
 
 seqA = "AGTAAACCGTA"
@@ -57,7 +58,7 @@ class LocalAlignment:
 
         pathTup = self._pathMatrix2(self.scoreMat)
 
-        print(pathTup)
+        print(pathTup, "here")
 
         print("".join([x[0] for x in pathTup[0]["outList"]]))
         print("".join([x[1] for x in pathTup[0]["outList"]]))
@@ -185,8 +186,7 @@ class LocalAlignment:
 
         r, c = np.unravel_index(matrix.argmax(), matrix.shape)
 
-        indexMat = [{"r":int(r), "c":int(c), "outList":[], "path":"diagonal",
-                "sumScore":0}]
+        indexMat = [{"r":int(r), "c":int(c), "outList":[], "sumScore":0}]
 
         complete_alignments = []
 
@@ -202,9 +202,14 @@ class LocalAlignment:
 
             if 0 in [indexMatc["r"], indexMatc["c"]]:
                 complete_alignments.append(indexMatc)
+                continue
+
+            elif len(indexMatc) > 1:
+                indexMat.extend(indexMatc)
+                continue
 
             else:
-                indexMat.extend(indexMatc)
+                indexMat.append(indexMatc)
 
         return complete_alignments
 
@@ -220,37 +225,24 @@ class LocalAlignment:
 
         r, c = indexMat["r"], indexMat["c"]
 
-        if self.scoreMat[r-1][c] == self.scoreMat[r][c-1]:
-            indexMat["outList"].append((self.seq1[r-1], self.seq2[c-1]))
-            indexMat["sumScore"] += self.scoreMat[r][c]
-            indexMat["path"] = "both"
-            return indexMat
+        #if indexMat["path"] == "both":
 
-        elif indexMat["path"] == "both":
-            diagPath = indexMat
-            vertPath = IndexMat
-            diagPath["c"] -= 1
-            vertPath["r"] -= 1
-            return diagPath vertPath
-
-        #elif indexMat["path"] == "horizontal":
-            ## Need to deal with horiz/vert and pass two dicts back.
-            ## Return two copies of the value with horiz/vert paths
-            ## Could impletement this in the first if statement of the while
-            ## loop.
-
-            #indexMat["sumScore"] += self.scoreMat[r][c]
-            #outChar = ("-", seq2L[c-1])
-            #c -= 1
-
-        #else:
         #    indexMat["sumScore"] += self.scoreMat[r][c]
-        #    outChar = (self.seq1[r-1], "-")
-        #    r -= 1
 
-        while (0 not in [r, c]) and (self.scoreMat[r-1][c] !=
-                self.scoreMat[r][c-1]):
+        #    horizPath = copy.deepcopy(indexMat)
+        #    horizPath["c"] -= 1
+        #    horizPath["path"] = "horizontal"
+        #    horizPath["outList"].append(("-", self.seq2[c-1]))
 
+        #    vertPath = copy.deepcopy(indexMat)
+        #    vertPath["r"] -= 1
+        #    vertPath["path"] = "vertical"
+        #    vertPath["outList"].append((self.seq1[r-1], "-"))
+
+        #    return horizPath, vertPath
+
+        while (0 not in [r, c]):
+            
             diag = self.scoreMat[r-1][c-1]
             horizontal = self.scoreMat[r][c-1]
             vertical = self.scoreMat[r-1][c]
@@ -259,12 +251,16 @@ class LocalAlignment:
             g = [diag, horizontal, vertical]
 
             if g.count(max(g)) > 1:
-                if horizontal == vertical:
+                if horizontal == vertical > diag:
                     indexMat["sumScore"] -= self.scoreMat[r][c]
-                    indexMAt["path"] == "both"
                     indexMat["r"], indexMat["c"] = r, c
 
                     return indexMat
+
+                if (diag > vertical == horizontal) or g.count(0) == 3:
+                    outChar = (self.seq1[r-1], self.seq2[c-1])
+                    r -= 1
+                    c -= 1
 
                 elif max(g) == horizontal:
                     outChar = ("-", self.seq2[c-1])
@@ -272,7 +268,6 @@ class LocalAlignment:
 
                 else:
                     outChar = (self.seq1[r-1], "-")
-                    r -= 1
 
             elif max(g) == horizontal:
                 outChar = ("-", self.seq2[c-1])
@@ -291,6 +286,7 @@ class LocalAlignment:
             indexMat["r"], indexMat["c"] = int(r), int(c)
 
         return indexMat
+
 
     def _pathMatrix(self, matrix):
         """Determines path through sequence scoring matricies."""
@@ -388,3 +384,7 @@ x = LocalAlignment(seqA, seqB)
 x.start()
 ## vertically and horizontally. Sync threads and rebuild matrix then move
 # reference.
+
+
+## Note: Pathmatrix2 -- have to find whether best move is diagonal/vet/horiz not
+## just randomly assign.
