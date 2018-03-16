@@ -2,18 +2,10 @@
 
 # Author: Jonathan Hull (jonathan.hull11@gmail.com)
 
-# y = threading.Thread(name="one", target=self.method)
-
-# self.queue_one = Queue.Queue()
-# self.queue_one.put(Value)
-# self.queue_one.get()
-
-
 import sys
-import random
-import threading
+#import threading
 #import multiprocessing as mp
-import Queue
+#import Queue
 import numpy as np
 import copy
 
@@ -29,7 +21,6 @@ class LocalAlignment:
                 score_method="affine",
                 seq_opening=5,
                 seq_gap=1,
-                #seq_gap=2,
                 seq_match=3, 
                 seq_miss=3):
 
@@ -50,27 +41,14 @@ class LocalAlignment:
         if self.score_method == "affine":
             self.scoreMat = self.AffineScoreMatrix(self.boolMat)
         elif self.score_method == "linear":
+            print("here")
             self.scoreMat = self.scoreMatrix(self.boolMat)
         else:
             raise NameError('score_method argument must be either '
                     '"affine, or "linear".')
 
-
-        pathTup = self._pathMatrix2(self.scoreMat)
-
-        print(pathTup, "here")
-
-        print("".join([x[0] for x in pathTup[0]["outList"]]))
-        print("".join([x[1] for x in pathTup[0]["outList"]]))
-
-
-        quit()
-
-        pathTup = self._pathMatrix(self.scoreMat)
-        base = self._seqAssembly(pathTup)
-
-        #self._seqStatistics(base)
-
+        pathDict = self._pathMatrix2(self.scoreMat)
+        self.base = self._seqAssembly(pathDict)
 
 
     def boolMatrixGen(self):
@@ -107,7 +85,6 @@ class LocalAlignment:
                         reverse=True)[0]
 
         return matrix
-
 
 
     def AffineScoreMatrix(self, boolMat):
@@ -177,10 +154,6 @@ class LocalAlignment:
     def _pathMatrix2(self, matrix):
         """Sequence alignment controller method."""
 
-        ## use self.scoreMat intead of matrix.
-        ## Only accept indexMat appendages.
-        ## complete_alignments self object?
-
         ## Modifying list whilst iterating... (fix)
         ## Rename "outList" 
 
@@ -217,29 +190,7 @@ class LocalAlignment:
     def _pathMatrixMan(self, indexMat):
         """Determines paths through sequence alignment matrix."""
 
-        ## Note: Horizontal pathing comes before vertical.
-        ## Can just return the next iteration of indexMat.
-
-        ## Note: The vert/horiz priority only makes sence if the nucleotides
-        ## match, otherwise the diag should take priority.
-
         r, c = indexMat["r"], indexMat["c"]
-
-        #if indexMat["path"] == "both":
-
-        #    indexMat["sumScore"] += self.scoreMat[r][c]
-
-        #    horizPath = copy.deepcopy(indexMat)
-        #    horizPath["c"] -= 1
-        #    horizPath["path"] = "horizontal"
-        #    horizPath["outList"].append(("-", self.seq2[c-1]))
-
-        #    vertPath = copy.deepcopy(indexMat)
-        #    vertPath["r"] -= 1
-        #    vertPath["path"] = "vertical"
-        #    vertPath["outList"].append((self.seq1[r-1], "-"))
-
-        #    return horizPath, vertPath
 
         while (0 not in [r, c]):
             
@@ -288,103 +239,23 @@ class LocalAlignment:
         return indexMat
 
 
-    def _pathMatrix(self, matrix):
-        """Determines path through sequence scoring matricies."""
-
-        ## Enable multithreading
-        ## Create method of storing locations where paths diverge.
-        ## Create new thread where paths diverge.
-        ## End state where r/c == 0, or score == 0.
-        ## ^ maybe search x nucleotides after score == 0?
-
-        outList = []
-
-        r, c = np.unravel_index(matrix.argmax(), matrix.shape)
-
-        while r and c != 0:
-            diag = matrix[r-1][c-1]
-            horizontal = matrix[r][c-1]
-            vertical = matrix[r-1][c]
-
-            g = max(diag, horizontal, vertical)
-
-            if g == diag:
-                outChar = (self.seq1[r-1], self.seq2[c-1])
-                r -= 1
-                c -= 1
-
-            elif horizontal == vertical:
-                if random.random() < 0.5:
-                    outChar = (self.seq1[r-1], "-")
-                    r -= 1
-
-                else:
-                    outChar = ("-", self.seq2[c-1])
-                    c -= 1
-
-            elif g == horizontal:
-                outChar = ("-", self.seq2[c-1])
-                c -= 1
-
-            else:
-                outChar = (self.seq1[r-1], "-")
-                r -= 1
-
-            outList.append(outChar)
-
-        ## Condition for when r/c becomes zero needed.
-
-        return outList
-
-
-    def _seqAssembly(self, seqList):
+    def _seqAssembly(self, pathDict):
         """Builds sequence alignment from path prediction."""
 
-        cList = [[x[0] for x in seqList], "", [x[1] for x in seqList]]
-        mList = []
+        output = []
 
-        for i in range(len(cList[0])):
-            if seqList[i][0] == seqList[i][1]:
-                mList.append("|")
-            else:
-                mList.append(" ")
+        for adict in pathDict:
+            cList = [[x[0] for x in adict["outList"]], "", [x[1] for x in adict["outList"]]]
+            mList = []
 
-        cList[1] = mList
+            for i in range(len(cList[0])):
+                if cList[0][i] == cList[2][i]:
+                    mList.append("|")
+                else:
+                    mList.append(" ")
 
-        return cList
+            cList[1] = mList
 
+            output.append(cList)
 
-    def _seqStatistics(self, cList):
-        """Generate basic statistics on sequence alignment"""
-
-        n = SequenceStatistics(cList)
-
-        print(n.gc_ratio())
-
-
-
-
-
-class SequenceStatistics:
-    def __init__(self, seqList):
-        self.seqList = seqList
-
-    def gc_ratio(self):
-        seq1 = (float(self.seqList[0].count("G")) +
-                self.seqList[0].count("C"))/len(self.seqList[0])
-
-        seq2 = (float(self.seqList[2].count("G")) +
-                self.seqList[2].count("C"))/len(self.seqList[2])
-
-        return seq1, seq2
-
-
-
-x = LocalAlignment(seqA, seqB)
-x.start()
-## vertically and horizontally. Sync threads and rebuild matrix then move
-# reference.
-
-
-## Note: Pathmatrix2 -- have to find whether best move is diagonal/vet/horiz not
-## just randomly assign.
+        return output
