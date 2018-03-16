@@ -28,7 +28,6 @@ class Alignment:
 
     def scoreMatrix(self, boolMat):
         """Generates the score matrix from the base matrix"""
-        ## Rename linear score matrix.
 
         ## Note: holder is used so that local alignment scores do not become
         ## negative.
@@ -48,7 +47,6 @@ class Alignment:
 
         for r in range(1, len(matrix)):
             for c in range(1, len(matrix[0])):
-
                 if boolMat[r-1][c-1] == True:
                     diag = matrix[r-1][c-1] + self.seq_match
                 else:
@@ -79,7 +77,6 @@ class Alignment:
                     mList.append(" ")
 
             cList[1] = mList
-
             output.append(cList)
 
         return output
