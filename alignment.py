@@ -297,7 +297,6 @@ class GlobalAlignment(Alignment):
             seq_match=3,
             seq_miss=-3):
 
-
         """
         Global Alignment 
 
