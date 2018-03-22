@@ -21,22 +21,26 @@ import numpy
 
 seqA = "AGTAAACCGTA"
 seqB = "AGTAACGTA"
+seqC = "AGGTACGTATA"
 
 class Muscle:
 
     def __init__(self,
             kmer_length=3,
+            kmer_measure="default",
             *sequences):
 
         """
         Muscle Alignment
 
         :param kmer_length: K-mer lengths used to determine sequence similarity.
+        :param kmer_measure: K-mer similarity scoring method : args - default/binary.
         :param sequences: list of sequences to be aligned.
         """
 
         self.kmer_length = kmer_length
         self.sequences = sequences
+        self.kmer_measure = kmer_measure
 
         if "U" in sequences[0]:
             self.RNA = True
@@ -49,7 +53,13 @@ class Muscle:
         ## Serialise k-mer dicts?
 
         self.kmer_base = self.kmer_dictionary()
-        self.kmer_dict = self.kmer_similarity()
+        self.kmer_dict = self.kmer_count()
+
+        if self.kmer_measure == "binary":
+            self.kmer_binary_sim()
+
+        else:
+            self.kmer_similarity()
 
 
     def kmer_dictionary(self):
@@ -80,7 +90,7 @@ class Muscle:
         return outDict
 
 
-    def kmer_similarity(self):
+    def kmer_count(self):
         """Determines sequence k-mer occurrence."""
 
         adict = dict()
@@ -95,7 +105,90 @@ class Muscle:
 
         return adict
 
+    def kmer_similarity(self):
+
+        ## F = sum(min[Nx(T), Ny(T)]) / [min(Lx,Ly) - k + 1]
+        ## Nx,Ny == Occurance of specific kmer.
+        ## Lx,Ly == Sequence lenghts.
+        ## k == k-mer length.
+        ## self.kmer_length
+
+        kmers = self.kmer_dict["seq_1"].keys()
+        similarity_scores = dict()
+
+        for prime_sequence in range(len(self.kmer_dict)):
+            for i in range(prime_sequence+1, len(self.sequences)):
+
+                outScore = 0
+                    
+                d = min(
+                    len(self.sequences[prime_sequence]),
+                    len(self.sequences[i])
+                    ) - self.kmer_length + 1
+
+                for kmer in kmers:
+                    n = min(
+                        self.kmer_dict["seq_{}".format(prime_sequence+1)][kmer],
+                        self.kmer_dict["seq_{}".format(i+1)][kmer]
+                        )
+
+                    outScore += n
+
+                similarity_scores[(prime_sequence+1, i+1)] = float(outScore)/d
+
+        return similarity_scores
 
 
-x = Muscle(3,seqA,seqB)
+    def kmer_binary_sim(self):
+
+        ## F = sum(deltaxy(T)) / [min(Lx,Ly) - k +1]
+        ## deltaxy(y) = 1 if kmer present in both sequences.
+        ## Lx,Ly == Sequence lenghts.
+        ## k == k-mer length.
+        ## self.kmer_length
+
+        kmers = self.kmer_dict["seq_1"].keys()
+        similarity_scores = dict()
+
+        for prime_sequence in range(len(self.kmer_dict)):
+            for i in range(prime_sequence+1, len(self.sequences)):
+
+                outScore = 0
+
+                d = min(
+                    len(self.sequences[prime_sequence]),
+                    len(self.sequences[i])
+                    ) - self.kmer_length + 1
+
+                for kmer in kmers:
+                    if min(self.kmer_dict["seq_{}".format(prime_sequence+1)][kmer],
+                        self.kmer_dict["seq_{}".format(i+1)][kmer]) >= 1:
+
+                        n = 1
+
+                    else:
+                        n=0
+
+                    outScore += n
+
+                similarity_scores[(prime_sequence+1, i+1)] = float(outScore)/d
+
+        return similarity_scores
+
+
+    def distance_measure(self):
+        pass
+
+
+
+
+
+
+
+
+
+x = Muscle(3,"binary",seqA,seqB, seqC)
 x.start()
+
+print(x.kmer_binary_sim())
+print(x.kmer_similarity())
