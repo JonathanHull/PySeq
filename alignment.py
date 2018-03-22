@@ -9,9 +9,6 @@ import sys
 import numpy as np
 import copy
 
-seqA = "AGTAAACCGTA"
-seqB = "AGTAACGTA"
-
 class Alignment:
     def boolMatrixGen(self):
         """Generates boolean similarity matrix from nucleotide sequences"""
@@ -24,7 +21,6 @@ class Alignment:
                     matrix[r][c] = True
 
         return matrix
-
 
     def scoreMatrix(self, boolMat):
         """Generates the score matrix from the base matrix"""
@@ -60,7 +56,6 @@ class Alignment:
 
         return matrix
 
-
     def _seqAssembly(self, pathDict):
         """Builds sequence alignment from path prediction."""
 
@@ -80,7 +75,6 @@ class Alignment:
             output.append(cList)
 
         return output
-
 
     def _pathMatrixMan(self, matrix):
         """Sequence alignment controller method."""
@@ -116,7 +110,6 @@ class Alignment:
                 indexMat.append(indexMatc)
 
         return complete_alignments
-
 
     def _pathMatrix(self, indexMat):
         """Determines paths through sequence alignment matrix."""
@@ -221,8 +214,8 @@ class LocalAlignment(Alignment):
                     '"affine, or "linear".')
 
         pathDict = self._pathMatrixMan(self.scoreMat)
+        self.score = pathDict[0]["sumScore"]
         self.base = self._seqAssembly(pathDict)
-
 
     def AffineScoreMatrix(self, boolMat):
         """Generates scoring matrix utilising affine transformations."""
@@ -287,7 +280,6 @@ class LocalAlignment(Alignment):
 
         return matrix
 
-
 class GlobalAlignment(Alignment):
 
     def __init__(self,
@@ -321,4 +313,5 @@ class GlobalAlignment(Alignment):
         self.boolMat = self.boolMatrixGen()
         self.scoreMat = self.scoreMatrix(self.boolMat)
         pathDict = self._pathMatrixMan(self.scoreMat)
+        self.score = pathDict[0]["sumScore"]
         self.base = self._seqAssembly(pathDict)
