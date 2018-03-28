@@ -158,7 +158,10 @@ class Muscle:
                         self.kmer_dict["seq_{}".format(i+1)][kmer]
                         )
 
+                    outScore += n
+
                 similarity_scores[(prime_sequence+1, i+1)] = float(outScore)/d
+
 
         return similarity_scores
 
@@ -231,3 +234,4 @@ class Muscle:
 
 x = Muscle(3,"default","kmer",seqA,seqB,seqC)
 x.start()
+print(x.sequence_distance)
