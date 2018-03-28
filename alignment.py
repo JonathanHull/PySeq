@@ -59,8 +59,6 @@ class Alignment:
     def _seqAssembly(self, pathDict):
         """Builds sequence alignment from path prediction."""
 
-        output = []
-
         for adict in pathDict:
             cList = [[x[0] for x in adict["outList"]], "", [x[1] for x in adict["outList"]]]
             mList = []
@@ -72,9 +70,8 @@ class Alignment:
                     mList.append(" ")
 
             cList[1] = mList
-            output.append(cList)
 
-        return output
+        return cList
 
     def _pathMatrixMan(self, matrix):
         """Sequence alignment controller method."""

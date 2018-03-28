@@ -1,4 +1,4 @@
-class SequenceStatistics:
+class SeqStatistics:
     def __init__(self, seqList):
         self.seqList = seqList
 
@@ -17,9 +17,13 @@ class SequenceStatistics:
         """Returns passed nucleoitde sequences as list."""
         return ["".join(self.seqList[0]), "".join(self.seqList[2])]
 
-    def similarity(self):
-        """Returns sequence similarity ratios."""
+    def fractionalIdentity(self):
+        """Returns the fractional identity of aligned sequences"""
         return float(self.seqList[1].count("|"))/len(self.seqList[1])
+
+    def percentageIdentity(self):
+        """Returns the percentace identity of aligned sequences"""
+        return float(self.seqList[1].count("|"))/len(self.seqList[1])*100
 
     def score(self):
         """Returns sum of alignment score."""
