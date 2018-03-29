@@ -17,11 +17,14 @@
 
 ## 3 - Refinement stages
 
+## Introduce method of producing heatmap for similarity matrix.
+
 import numpy
 import math
 import copy
 import alignment
 
+import numpy as np
 from SeqStatistics import SeqStatistics
 
 seqA = "AGTAAACCGTA"
@@ -32,7 +35,6 @@ class Muscle:
 
     def __init__(self,
             kmer_length=3,
-            kmer_measure="default",
             distance_measure="kimura",
             *sequences):
 
@@ -43,16 +45,12 @@ class Muscle:
         :param distance_measure: Sequence distance scoring method. Options are:
             - Kimura
             - Kmer
-
-        :param kmer_measure: K-mer similarity scoring method. Options are:
-            - default
-            - binary
+            - kmer_binary
 
         :param sequences: list of sequences to be aligned.
         """
 
         self.kmer_length = kmer_length
-        self.kmer_measure = kmer_measure
         self.distance_measure = distance_measure
         self.sequences = sequences
 
@@ -61,33 +59,34 @@ class Muscle:
         else:
             self.RNA = False
 
+
     def start(self):
         """Initialises MUSCLE alignment algorithms."""
 
         ## Serialise k-mer dicts?
 
-        if self.distance_measure == "kmer":
+        self.distance_matrix = self.distance_init()
+
+        if self.distance_measure != "kimura":
 
             self.kmer_base = self.kmer_dictionary()
             self.kmer_dict = self.kmer_count()
 
-            if self.kmer_measure == "binary":
-                self.kmer_dict = self.kmer_binary_sim()
+            if self.distance_measure == "kmer_binary":
+                self.kmer_binary_sim()
 
             else:
-                self.kmer_dict = self.kmer_similarity()
+                self.kmer_similarity()
 
             self.sequence_distance = self.distance_kmer()
-
 
         elif self.distance_measure == "kimura":
             self.sequence_distance = self.distance_kimura()
 
-
         else:
-            raise NameError("distance_measure must be \"kimura\" or \"kmer\".")
+            raise NameError("distance_measure parameter must be \"kimura\" or \
+                    \"kmer\".")
 
-        ## kmura distance method call
 
     def kmer_dictionary(self):
         """Generates dictionary of all possible k-mers given k-mer length."""
@@ -116,6 +115,7 @@ class Muscle:
 
         return outDict
 
+
     def kmer_count(self):
         """Determines sequence k-mer occurrence."""
 
@@ -131,6 +131,11 @@ class Muscle:
 
         return adict
 
+
+    def distance_init(self):
+        return np.zeros([len(self.sequences), len(self.sequences)])
+
+
     def kmer_similarity(self):
 
         ## F = sum(min[Nx(T), Ny(T)]) / [min(Lx,Ly) - k + 1]
@@ -140,7 +145,6 @@ class Muscle:
         ## self.kmer_length
 
         kmers = self.kmer_dict["seq_1"].keys()
-        similarity_scores = dict()
 
         for prime_sequence in range(len(self.kmer_dict)):
             for i in range(prime_sequence+1, len(self.sequences)):
@@ -160,10 +164,10 @@ class Muscle:
 
                     outScore += n
 
-                similarity_scores[(prime_sequence+1, i+1)] = float(outScore)/d
+                self.distance_matrix[prime_sequence][i] = float(outScore)/d
 
 
-        return similarity_scores
+        ## return similarity_scores
 
 
     def kmer_binary_sim(self):
@@ -175,7 +179,6 @@ class Muscle:
         ## self.kmer_length
 
         kmers = self.kmer_dict["seq_1"].keys()
-        similarity_scores = dict()
 
         for prime_sequence in range(len(self.kmer_dict)):
             for i in range(prime_sequence+1, len(self.sequences)):
@@ -198,15 +201,12 @@ class Muscle:
 
                     outScore += n
 
-                similarity_scores[(prime_sequence+1, i+1)] = float(outScore)/d
+                self.distance_matrix[prime_sequence][i] = float(outScore)/d
 
-        return similarity_scores
 
     def distance_kimura(self):
 
         ## dKimura = -log(e)(1-D - D^2/5)
-
-        distance_measure = dict()
 
         for first in range(len(self.sequences)):
             for second in range(first+1, len(self.sequences)):
@@ -218,20 +218,30 @@ class Muscle:
                 GA = GA.base
                 D = SeqStatistics(GA).fractionalIdentity()
 
-                distance_measure[(first+1, second+1)] = -math.log(1-(D-D**2/5))
 
-        return distance_measure
+                self.distance_matrix[first][second] = -math.log(1-(D-D**2/5))
+
 
     def distance_kmer(self):
+        """Generates distance matrix utilising dkmer equation."""
 
-        distance_measure = dict()
+        dkmer_mat = np.zeros([len(self.sequences), len(self.sequences)])
 
-        for i in self.kmer_dict:
-            distance_measure[i] = 1 - self.kmer_dict[i]
+        for r in range(len(self.distance_matrix)):
+            for c in range(len(self.distance_matrix[0])):
+                if self.distance_matrix[r][c] == 0:
+                    dkmer_mat[r][c] = 0
 
-        return distance_measure
+                else:
+                    dkmer_mat[r][c] = 1 - self.distance_matrix[r][c]
+
+        return dkmer_mat
 
 
-x = Muscle(3,"default","kmer",seqA,seqB,seqC)
+    def binary_tree(self):
+        pass
+
+
+x = Muscle(3,"kimura",seqA,seqB,seqC)
 x.start()
-print(x.sequence_distance)
+print(x.distance_matrix)
