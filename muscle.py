@@ -67,7 +67,10 @@ class Muscle:
 
         self.distance_matrix = self.distance_init()
 
-        if self.distance_measure != "kimura":
+        if self.distance_measure == "kimura":
+            self.distance_kimura()
+
+        elif self.distance_measure in ["kmer", "kmer_binary"]:
 
             self.kmer_base = self.kmer_dictionary()
             self.kmer_dict = self.kmer_count()
@@ -78,15 +81,14 @@ class Muscle:
             else:
                 self.kmer_similarity()
 
-            self.sequence_distance = self.distance_kmer()
-
-        elif self.distance_measure == "kimura":
-            self.sequence_distance = self.distance_kimura()
+            self.initial_distance = self.distance_kmer()
 
         else:
-            raise NameError("distance_measure parameter must be \"kimura\" or \
-                    \"kmer\".")
+            raise NameError("distance_measure parameter must be \"kimura\", "
+                    "\"kmer\", or \"kmer_binary\".")
 
+        self._distance_mirror()
+                    
 
     def kmer_dictionary(self):
         """Generates dictionary of all possible k-mers given k-mer length."""
@@ -133,7 +135,15 @@ class Muscle:
 
 
     def distance_init(self):
+        """Creates basic matrix framework"""
         return np.zeros([len(self.sequences), len(self.sequences)])
+
+    def _distance_mirror(self):
+        """Mirrors distance_matrix values"""
+        
+        for i in range(len(self.distance_matrix)):
+            for e in range(len(self.distance_matrix)):
+                self.distance_matrix[e][i] = self.distance_matrix[i][e]
 
 
     def kmer_similarity(self):
@@ -165,9 +175,6 @@ class Muscle:
                     outScore += n
 
                 self.distance_matrix[prime_sequence][i] = float(outScore)/d
-
-
-        ## return similarity_scores
 
 
     def kmer_binary_sim(self):
@@ -235,13 +242,68 @@ class Muscle:
                 else:
                     dkmer_mat[r][c] = 1 - self.distance_matrix[r][c]
 
+
+
         return dkmer_mat
+
+    def __nearest_neighbour(self, distance_matrix):
+        """Finds next set of sequence neighbours in distance matrix."""
+
+        ## Find smallest value
+        ## r,c,val
+
+        sm = [0,0,1]
+        holder = 1
+
+        for row in range(len(distance_matrix)):
+            for col in range(holder, len(distance_matrix[row])):
+
+                if distance_matrix[row][col] < sm[2]:
+                    sm = [row, col, distance_matrix[row][col]]
+
+            holder+=1
+
+        return sm
 
 
     def binary_tree(self):
+        """Unweighted Pair Group Method with Arithmetic Mean."""
+
+        ## len(self.distance_matrix)-1 == number of iterations.
+
+        test = self.distance_matrix
+
+        for distance_iteration in range(len(self.distance_matrix)-2):
+
+            self.distance_matrix_update(test)
+
+            
+
+            pass
+
+
         pass
+
+    def distance_matrix_update(self, distance_matrix):
+
+        ## column/row +1 == seq_id
+
+        new_matrix = np.zeros([len(distance_matrix)-1, len(distance_matrix)-1])
+        cluster_pair = self.__nearest_neighbour(distance_matrix)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 x = Muscle(3,"kimura",seqA,seqB,seqC)
 x.start()
-print(x.distance_matrix)
+x.binary_tree()
