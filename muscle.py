@@ -88,7 +88,7 @@ class Muscle:
                     "\"kmer\", or \"kmer_binary\".")
 
         self._distance_mirror()
-                    
+
 
     def kmer_dictionary(self):
         """Generates dictionary of all possible k-mers given k-mer length."""
@@ -225,8 +225,8 @@ class Muscle:
                 GA = GA.base
                 D = SeqStatistics(GA).fractionalIdentity()
 
-
                 self.distance_matrix[first][second] = -math.log(1-(D-D**2/5))
+
 
 
     def distance_kmer(self):
@@ -242,9 +242,8 @@ class Muscle:
                 else:
                     dkmer_mat[r][c] = 1 - self.distance_matrix[r][c]
 
-
-
         return dkmer_mat
+
 
     def __nearest_neighbour(self, distance_matrix):
         """Finds next set of sequence neighbours in distance matrix."""
@@ -265,6 +264,26 @@ class Muscle:
 
         return sm
 
+    def _alphabetic_identification(self):
+        """Generates dictionary, keys are numeric cluster identifier."""
+
+        static_list = [chr(x) for x in range(97,123)]
+        sequence_ids = list(static_list)
+        outlist =  list(static_list)
+
+        while len(sequence_ids) < 900:
+
+            holder_list = []
+
+            for i in outlist:
+                for e in range(len(static_list)):
+                    holder_list.append(i+static_list[e])
+
+            outlist = holder_list
+            sequence_ids.extend(holder_list)
+
+        return sequence_ids
+
 
     def binary_tree(self):
         """Unweighted Pair Group Method with Arithmetic Mean."""
@@ -274,22 +293,35 @@ class Muscle:
         test = self.distance_matrix
 
         for distance_iteration in range(len(self.distance_matrix)-2):
-
             self.distance_matrix_update(test)
 
-            
+            quit()
 
-            pass
-
-
-        pass
 
     def distance_matrix_update(self, distance_matrix):
+        """Generates next iteration of the UPGMA clustering method"""
 
         ## column/row +1 == seq_id
 
         new_matrix = np.zeros([len(distance_matrix)-1, len(distance_matrix)-1])
         cluster_pair = self.__nearest_neighbour(distance_matrix)
+        clustering_dict = dict()
+        clustering_list = list()
+
+        ## Use list to track clustering.
+        ## Should alphabetise clustering
+
+        ## Check whether not apart of group first
+        ## then check if in tuple.
+        ## [x for x in clustering_list if type(x) == tuple]
+
+        ## dict[D1] = First clustering
+        ## dict[D1] = [cluster_pair[r], cluster_pair[c], 
+        ## num_clustered_seqs-1]
+
+        #clustering_dict["D{}".format(len(clustering_dict)+1)] =
+
+        #[cluster_pair[r], cluster_pair[c], 
 
 
 
@@ -304,6 +336,14 @@ class Muscle:
 
 
 
-x = Muscle(3,"kimura",seqA,seqB,seqC)
+
+
+
+
+
+
+
+
+x = Muscle(3,"kmer",seqA,seqB,seqC)
 x.start()
 x.binary_tree()
