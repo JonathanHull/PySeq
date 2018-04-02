@@ -271,7 +271,7 @@ class Muscle:
         sequence_ids = list(static_list)
         outlist =  list(static_list)
 
-        while len(sequence_ids) < 900:
+        while len(sequence_ids) < len(self.sequences):
 
             holder_list = []
 
@@ -282,7 +282,7 @@ class Muscle:
             outlist = holder_list
             sequence_ids.extend(holder_list)
 
-        return sequence_ids
+        return sequence_ids[:len(self.sequences)]
 
 
     def binary_tree(self):
