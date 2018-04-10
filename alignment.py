@@ -159,6 +159,9 @@ class Alignment:
 
         return indexMat
 
+    def alignment_output(self):
+        return ["".join(x) for x in self.base]
+
 class LocalAlignment(Alignment):
 
     def __init__(self,
@@ -213,6 +216,7 @@ class LocalAlignment(Alignment):
         pathDict = self._pathMatrixMan(self.scoreMat)
         self.score = pathDict[0]["sumScore"]
         self.base = self._seqAssembly(pathDict)
+        self.alignment_list = self.alignment_output()
 
     def AffineScoreMatrix(self, boolMat):
         """Generates scoring matrix utilising affine transformations."""
@@ -312,3 +316,4 @@ class GlobalAlignment(Alignment):
         pathDict = self._pathMatrixMan(self.scoreMat)
         self.score = pathDict[0]["sumScore"]
         self.base = self._seqAssembly(pathDict)
+        self.alignment_list = self.alignment_output()
