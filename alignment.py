@@ -61,6 +61,7 @@ class Alignment:
 
         for adict in pathDict:
             cList = [[x[0] for x in adict["outList"]], "", [x[1] for x in adict["outList"]]]
+
             mList = []
 
             for i in range(len(cList[0])):
@@ -169,7 +170,8 @@ class Alignment:
         return indexMat
 
     def alignment_output(self):
-        return ["".join(x) for x in self.base]
+        return [t[::-1] for t in ["".join(x) for x in self.base]]
+        #return ["".join(x) for x in self.base]
 
 class LocalAlignment(Alignment):
 
@@ -327,4 +329,5 @@ class GlobalAlignment(Alignment):
 
         self.score = pathDict[0]["sumScore"]
         self.base = self._seqAssembly(pathDict)
+
         self.alignment_list = self.alignment_output()
