@@ -122,6 +122,15 @@ class Alignment:
 
             g = [diag, horizontal, vertical]
 
+            if 1 in [r,c]:
+                if r==1 and self.scoreMat[r][c] == vertical:
+                    outChar = (self.seq1[r-1], self.seq2[c-1])
+                    r -= 1
+
+                elif c==1 and self.scoreMat[r][c] == horizontal:
+                    outChar = (self.seq1[r-1], self.seq2[c-1])
+                    c -= 1
+
             if g.count(max(g)) > 1:
                 if horizontal == vertical > diag:
                     indexMat["sumScore"] -= self.scoreMat[r][c]
@@ -313,7 +322,9 @@ class GlobalAlignment(Alignment):
 
         self.boolMat = self.boolMatrixGen()
         self.scoreMat = self.scoreMatrix(self.boolMat)
+
         pathDict = self._pathMatrixMan(self.scoreMat)
+
         self.score = pathDict[0]["sumScore"]
         self.base = self._seqAssembly(pathDict)
         self.alignment_list = self.alignment_output()
