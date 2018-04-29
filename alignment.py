@@ -61,7 +61,6 @@ class Alignment:
 
         for adict in pathDict:
             cList = [[x[0] for x in adict["outList"]], "", [x[1] for x in adict["outList"]]]
-
             mList = []
 
             for i in range(len(cList[0])):
@@ -86,11 +85,9 @@ class Alignment:
             r, c = np.unravel_index(matrix.argmax(), matrix.shape)
 
         indexMat = [{"r":int(r), "c":int(c), "outList":[], "sumScore":0}]
-
         complete_alignments = []
 
         while len(indexMat) > 0:
-
             indexMatc = indexMat[0]
             del(indexMat[0])
 
@@ -114,23 +111,13 @@ class Alignment:
 
         r, c = indexMat["r"], indexMat["c"]
 
-        while (0 not in [r, c]):
-            
+        while (1 not in [r, c]):
             diag = self.scoreMat[r-1][c-1]
             horizontal = self.scoreMat[r][c-1]
             vertical = self.scoreMat[r-1][c]
             indexMat["sumScore"] += self.scoreMat[r][c]
 
             g = [diag, horizontal, vertical]
-
-            if 1 in [r,c]:
-                if r==1 and self.scoreMat[r][c] == vertical:
-                    outChar = (self.seq1[r-1], self.seq2[c-1])
-                    r -= 1
-
-                elif c==1 and self.scoreMat[r][c] == horizontal:
-                    outChar = (self.seq1[r-1], self.seq2[c-1])
-                    c -= 1
 
             if g.count(max(g)) > 1:
                 if horizontal == vertical > diag:
@@ -167,14 +154,28 @@ class Alignment:
             indexMat["outList"].append(outChar)
             indexMat["r"], indexMat["c"] = int(r), int(c)
 
+        ## detect end repeating nucleotide sequences which can drastically
+        ## elongate alignment.
+
+        ## Algorithm doesn't align repeat regions well; implement statistics
+        ## detailing uncertainty.
+
+        if r==1 and (self.scoreMat[r][c] >= vertical):
+            outChar = (self.seq1[r-1], self.seq2[c-1])
+
+        if c==1 and (self.scoreMat[r][c] >= horizontal):
+            outChar = (self.seq1[r-1], self.seq2[c-1])
+
+        indexMat["outList"].append(outChar)
+        indexMat["sumScore"] += self.scoreMat[r][c]
+        indexMat["r"] = 0
+
         return indexMat
 
     def alignment_output(self):
         return [t[::-1] for t in ["".join(x) for x in self.base]]
-        #return ["".join(x) for x in self.base]
 
 class LocalAlignment(Alignment):
-
     def __init__(self,
                 seq1, 
                 seq2,
@@ -277,10 +278,8 @@ class LocalAlignment(Alignment):
 
                         if horizontal == vertical:
                             kh += 1
-
                     else:
                         kh += 1
-
                 else:
                     kh = 1
 
@@ -293,7 +292,6 @@ class LocalAlignment(Alignment):
         return matrix
 
 class GlobalAlignment(Alignment):
-
     def __init__(self,
             seq1,
             seq2,
@@ -324,10 +322,7 @@ class GlobalAlignment(Alignment):
 
         self.boolMat = self.boolMatrixGen()
         self.scoreMat = self.scoreMatrix(self.boolMat)
-
         pathDict = self._pathMatrixMan(self.scoreMat)
-
         self.score = pathDict[0]["sumScore"]
         self.base = self._seqAssembly(pathDict)
-
         self.alignment_list = self.alignment_output()
