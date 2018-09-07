@@ -137,6 +137,7 @@ class Alignment:
 
                 else:
                     outChar = (self.seq1[r-1], "-")
+                    r -= 1
 
             elif max(g) == horizontal:
                 outChar = ("-", self.seq2[c-1])
