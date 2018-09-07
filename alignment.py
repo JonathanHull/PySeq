@@ -137,7 +137,6 @@ class Alignment:
 
                 else:
                     outChar = (self.seq1[r-1], "-")
-                    r -= 1
 
             elif max(g) == horizontal:
                 outChar = ("-", self.seq2[c-1])
@@ -238,6 +237,7 @@ class LocalAlignment(Alignment):
         ## where u = gap extention penalty, V = gap opening penalty.
 
         matrix = np.zeros([len(boolMat)+1, len(boolMat[0])+1])
+        print(boolMat)
 
         kv = [] # List of gaps passed to next iteration.
         kvc = [] # tuple list :: (column index, gap extention(k))
