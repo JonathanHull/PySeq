@@ -31,8 +31,7 @@ seqA = "AGTAAACCGTA"
 seqB = "AGTAACGTA"
 seqC = "AGGTACGTATA"
 
-class Muscle:
-
+class MuscleAlignemnt:
     def __init__(self,
             kmer_length=3,
             distance_measure="kimura",
@@ -72,8 +71,8 @@ class Muscle:
 
         elif self.distance_measure in ["kmer", "kmer_binary"]:
 
-            self.kmer_base = self.kmer_dictionary()
-            self.kmer_dict = self.kmer_count()
+            self.kmer_base = self._kmerDictGen()
+            self.kmer_dict = self._kmerCount()
 
             if self.distance_measure == "kmer_binary":
                 self.kmer_binary_sim()
@@ -90,8 +89,15 @@ class Muscle:
         self._distance_mirror()
 
 
-    def kmer_dictionary(self):
-        """Generates dictionary of all possible k-mers given k-mer length."""
+    def _kmerDictGen(self):
+        """
+        _kmerDictGen
+
+        Generates dictonary of all posible kmers of given length
+        (self.kmer_length) for DNA/RNA sequences.
+
+        i.e. Counts kmer occurance in parsed sequences.
+        """
 
         if self.RNA == True:
             nucList = ["A","U","G","C"]
@@ -117,9 +123,13 @@ class Muscle:
 
         return outDict
 
+    def _kmerCount(self):
+        """
+        _kmerCount
 
-    def kmer_count(self):
-        """Determines sequence k-mer occurrence."""
+        Utilises output dictionary from _kmerDictGen to count occurance of kmer
+        in parsed nucleotide sequences.
+        """
 
         adict = dict()
 
@@ -344,6 +354,6 @@ class Muscle:
 
 
 
-x = Muscle(3,"kmer",seqA,seqB,seqC)
+x = MuscleAlignemnt(3,"kmer",seqA,seqB,seqC)
 x.start()
 x.binary_tree()
