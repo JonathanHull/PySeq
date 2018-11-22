@@ -173,8 +173,8 @@ class Alignment:
         return indexMat
 
     def alignment_output(self):
-        return [t[::-1] for t in ["".join(x) for x in self.base]]
-
+        return ["".join(x) for x in self.base]
+            
 class LocalAlignment(Alignment):
     def __init__(self,
                 seq1, 
